@@ -40,13 +40,20 @@
         <div id="chat-output"></div>
     </div>
 
+    <div>
+        <button onclick="posttoserver">click me</button>
+    </div>
+
     <script>
-        async function SendMessage() {
+        async function posttoserver(){
+            const response = await fetch('/chat', {method: 'POST'})
+        }
+        async function sendMessage() {
             const userInput = document.getElementById('user-input').value;
             if (!userInput) return;
 
             const chatOutput = document.getElementById('chat-output');
-            chatOutput.innerHTML += '<div class="message user">User: ${userInput}</div>';
+            chatOutput.innerHTML += `<div class="message user">User: ${userInput}</div>`;
 
             const response = await fetch('/chat', {
                 method: 'POST',
@@ -55,17 +62,17 @@
                 },
                 body: JSON.stringify({chat: userInput})
             });
-        }
 
-        const data = await response.json();
-        if (data.error) {
-            chatOutput.innerHTML += '<div class="message bot">Error: ${data.error}</div>';
-        }
-        else {
-            chatOutput.innerHTML += 'div class="message bot">Bot: ${data}</div>';
-        }
+            const data = await response.json();
+            if (data.error) {
+                chatOutput.innerHTML += `<div class="message bot">Error: ${data.error}</div>`;
+            }
+            else {
+                chatOutput.innerHTML += `<div class="message bot">Bot: ${data.response}</div>`; //I'm pretty sure the error is on this line
+            }
 
-        document.getElementById('user-input').value = '';
+            document.getElementById('user-input').value = '';
+        }
     </script>
 </body>
 </html>

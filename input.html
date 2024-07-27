@@ -35,24 +35,17 @@
 <body>
     <div id="chat-container">
         <h1>Healthy water and air chat</h1>
-        <input type="text" id="user-input" placeholder="How can I help you today?">
+        <input type="text" id="user-input" autofocus placeholder="How can I help you today?">
         <button onclick="sendMessage()">Send</button>
         <div id="chat-output"></div>
     </div>
 
-    <div>
-        <button onclick="posttoserver">click me</button>
-    </div>
-
     <script>
-        async function posttoserver(){
-            const response = await fetch('/chat', {method: 'POST'})
-        }
         async function sendMessage() {
             const userInput = document.getElementById('user-input').value;
             if (!userInput) return;
 
-            const chatOutput = document.getElementById('chat-output');
+            const chatOutput =  document.getElementById('chat-output');
             chatOutput.innerHTML += `<div class="message user">User: ${userInput}</div>`;
 
             const response = await fetch('/chat', {
@@ -63,7 +56,7 @@
                 body: JSON.stringify({chat: userInput})
             });
 
-            const data = await response.json();
+            const data = await response; //changed from response.json()
             if (data.error) {
                 chatOutput.innerHTML += `<div class="message bot">Error: ${data.error}</div>`;
             }

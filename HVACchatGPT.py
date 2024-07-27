@@ -14,15 +14,12 @@
 - store single chat history in a list to keep context for the bot
 """
 
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify
 import openai
 # import os
 # from dotenv import load_dotenv
 import requests
 
-# @app.route('/index', method=['GET'])
-# def index():
-#     return render_template('input.html')
 
 # load_dotenv()
 
@@ -34,73 +31,49 @@ openai.api_key = 'sk-proj-bnfWULz43QZnCRdOemrXT3BlbkFJ1wuvzmDNYlt1k7wf5vki'
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        # user_input = request.json.get('chat')
-        # print(user_input) #remove this print later
-        # if not user_input:
-        #     return jsonify({'error': 'no input provided'}), 400
-        # if 'messages' not in session:
-        #     session['messages'] = []
-        # for item in session['messages']:    #remove this print later
-        #       print(item)
-
-        # response = openai.ChatCompletion.create(
-        #     engine="text-davinci-003",
-        #     prompt=user_input,
-        #     max_tokens=150
-        # )
-        # chat_response = response.choices[0].text.strip()
-        # return jsonify({'response': chat_response})
+        user_input = request.json.get('chat')
+        if not user_input:
+            return jsonify({'error': 'no input provided'}), 400
+        response = openai.ChatCompletion.create(
+            engine="text-davinci-003",
+            prompt=user_input,
+            max_tokens=150
+        )
+        header = {
+            'Authorization': 'Bearer sk-proj-bnfWULz43QZnCRdOemrXT3BlbkFJ1wuvzmDNYlt1k7wf5vki',
+            # 'Authorization': f"Bearer {openai.api_key}",
+            'Content-Type': 'application/json'
+        }
         data = {
             "model": "gpt-4",
             "messages": [
-                {
-                    "role": "user",
-                    "content": "Can you help me with something?"
-                }
-            ],
-            "max_tokens": 150
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "What is a rainbow trout?"}
+            ]
         }
-        headers = {
-            'Authorization': 'Bearer sk-proj-bnfWULz43QZnCRdOemrXT3BlbkFJ1wuvzmDNYlt1k7wf5vki',
-            'Content-Type': 'application/json'
-        }
-        response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
-        print(response.status_code)
 
+        response = requests.post('https://api.openai.com/v1/chat/completions', headers=header, json=data)
+        if response.status_code == 200:
+            result = response.json()
+            # print(result['choices'][0]['message']['content'])
+        else:
+            result = "idk"
+            # print(f"Request failed with status code {response.status_code}: {response.text}")
+        # print(response.json())
+        chat_response = response.choices[0].text.strip()
+        return jsonify({'response': chat_response})
     
 
-        # if response.status_code == 200:
-        #             result = response.json()
-        #             bot_message = result['choices'][0]['message']['content']
-        #             session['messages'].append({"role": "assistant", "content": bot_message})
-        #             return jsonify({'response': bot_message})
-        # else:
-        #             return jsonify({'error': f"Request failed with status code {response.status_code}: {response.text}"}), 500
-                  
     except openai.error.OpenAIError as e:
         return jsonify({'error': str(e)}), 500
     except Exception as e:
         return jsonify({'error': 'An error occured'}), 500
 
 
-header = {
-    'Authorization': 'Bearer sk-proj-bnfWULz43QZnCRdOemrXT3BlbkFJ1wuvzmDNYlt1k7wf5vki',
-    # 'Authorization': f"Bearer {openai.api_key}",
-    'Content-Type': 'application/json'
-}
-
-
-# print(response.json())
-
-# if response.status_code == 200:
-#     result = response.json()
-#     print(result['choices'][0]['message']['content'])
-# else:
-#     print(f"Request failed with status code {response.status_code}: {response.text}")
-
 if __name__ == '__main__':
     if not openai.api_key:
         raise ValueError('No openAI API key found. Set the OPENAI_API_KEY variable.')
+    
     app.run(debug=True)
 
 
@@ -137,3 +110,9 @@ def chat():
   "max_tokens": 150
 }
 """
+
+
+
+'''issues:
+- Server isn't waiting for UI to send me anything (line 64,65)
+- Need to send back to front end so it can print it'''

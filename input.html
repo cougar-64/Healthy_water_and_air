@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Healthy water and Air chat</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #chat-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        #chat-output {
+            border-top: 1px solid #ccc;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+        }
+        .user {
+            font-weight: bold;
+        }
+        .bot {
+            margin-left: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Healthy water and air chat</h1>
+        <input type="text" id="user-input" autofocus placeholder="How can I help you today?">
+        <button onclick="sendMessage()">Send</button>
+        <div id="chat-output"></div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input').value;
+            if (!userInput) return;
+
+            const chatOutput =  document.getElementById('chat-output');
+            chatOutput.innerHTML += `<div class="message user">User: ${userInput}</div>`;
+
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({chat: userInput})
+            });
+
+            const data = await response; //changed from response.json()
+            if (data.error) {
+                chatOutput.innerHTML += `<div class="message bot">Error: ${data.error}</div>`;
+            }
+            else {
+                chatOutput.innerHTML += `<div class="message bot">Bot: ${data.response}</div>`; //I'm pretty sure the error is on this line
+            }
+
+            document.getElementById('user-input').value = '';
+        }
+    </script>
+</body>
+</html>

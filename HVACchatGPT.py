@@ -48,16 +48,17 @@ def chat():
             "model": "gpt-4",
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "What is a rainbow trout?"}
+                {"role": "user", "content": user_input}
             ]
         }
 
         response = requests.post('https://api.openai.com/v1/chat/completions', headers=header, json=data)
         if response.status_code == 200:
             result = response.json()
-            # print(result['choices'][0]['message']['content'])
+            print(result['choices'][0]['message']['content'])
         else:
             result = "idk"
+            print(result)
             # print(f"Request failed with status code {response.status_code}: {response.text}")
         # print(response.json())
         chat_response = response.choices[0].text.strip()
@@ -74,42 +75,7 @@ if __name__ == '__main__':
     if not openai.api_key:
         raise ValueError('No openAI API key found. Set the OPENAI_API_KEY variable.')
     
-    app.run(debug=True)
-
-
-
-
-    """from flask import Flask, request, jsonify, session
-import openai
-
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session management
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    try:
-        user_input = request.json.get('chat')
-        if not user_input:
-            return jsonify({'error': 'No input provided'}), 400
-        
-        if 'messages' not in session:
-            session['messages'] = []
-
-        # Add user message to the session
-        session['m
-        
-        
-        {
-  "model": "gpt-4",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Can you help me with something?"
-    }
-  ],
-  "max_tokens": 150
-}
-"""
+    app.run(debug=True, use_reloader=False)
 
 
 

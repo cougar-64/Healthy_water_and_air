@@ -47,8 +47,8 @@
 
             const chatOutput =  document.getElementById('chat-output');
             chatOutput.innerHTML += `<div class="message user">User: ${userInput}</div>`;
-
-            const response = await fetch('/chat', {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/chat', { //adding the rest of the URL fixed the "method not allowed" error 
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/json'
@@ -56,13 +56,26 @@
                 body: JSON.stringify({chat: userInput})
             });
 
-            const data = await response; //changed from response.json()
+            console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
             if (data.error) {
                 chatOutput.innerHTML += `<div class="message bot">Error: ${data.error}</div>`;
             }
             else {
-                chatOutput.innerHTML += `<div class="message bot">Bot: ${data.response}</div>`; //I'm pretty sure the error is on this line
-            }
+                chatOutput.innerHTML = '';
+                    data.conversation.forEach(msg => {
+                        if (msg.role === 'user') {
+                            chatOutput.innerHTML += `<div class="message user">You: ${msg.content}</div>`;
+                        } else if (msg.role === 'assistant') {
+                            chatOutput.innerHTML += `<div class="message bot">Bot: ${msg.content}</div>`;
+                        }
+                    });
+                }
+        } catch (error) {
+            chatOutput.innerHTML += `<div class="message bot">Error: ${error.message}</div>`;
+        }
 
             document.getElementById('user-input').value = '';
         }

@@ -12,63 +12,105 @@
     we can then make specific videos based on what questions were most searched
 - train the bot to recommend our company for fixes
 - store single chat history in a list to keep context for the bot
+    - Needs to be saved for a certain amount of time? 
+- make the AI print out as it's typing, not just wait for a long time until it prints in a big block
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session as flask_session
 import openai
-# import os
-# from dotenv import load_dotenv
-import requests
+import os
+from dotenv import load_dotenv
+import logging
+import time
+from flask_cors import CORS
+from flask_session import Session
+import traceback
 
 
-# load_dotenv()
+load_dotenv()
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 app = Flask(__name__)
+CORS(app)
 
-openai.api_key = 'sk-proj-bnfWULz43QZnCRdOemrXT3BlbkFJ1wuvzmDNYlt1k7wf5vki'
-# openai.api_key = os.getenv('OPENAI_API_KEY')
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = './flask_session/'  # Ensure this directory exists
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANANT_SESSION_LIFETIME'] = 86400
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'session:'
+app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SESSION_COOKIE_NAME'] = 'test_session_1'  # Set a custom session cookie name
+Session(app)
+
+# logging to console
+logging.basicConfig(level=logging.DEBUG)
+
+@app.before_request
+def before_request():
+    app.logger.info(f"Session ID: {app.config['SESSION_COOKIE_NAME']}")
+    app.logger.info(f"Session Data Before: {dict(flask_session)}")
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    app.logger.info("endpoint /chat was hit")
     try:
+        app.logger.info("Request method: %s", request.method)
+        app.logger.info("Request data: %s", request.data.decode('utf-8'))
         user_input = request.json.get('chat')
         if not user_input:
             return jsonify({'error': 'no input provided'}), 400
+        
+         # Initialize the conversation history if it doesn't exist
+        if 'conversation' not in flask_session:
+            app.logger.info("Initializing conversation history in session")
+            flask_session['conversation'] = []
+
+            app.logger.info(f"Current conversation history before update: {flask_session['conversation']}")
+
+
+        # Add the user's input to the conversation history
+        flask_session['conversation'].append({"role": "user", "content": user_input})
+        
+        start_time = time.time()
         response = openai.ChatCompletion.create(
-            engine="text-davinci-003",
-            prompt=user_input,
+            model="gpt-4",
+            messages=[
+                {"role": "user", "content": user_input}
+            ],
             max_tokens=150
         )
-        header = {
-            'Authorization': 'Bearer sk-proj-bnfWULz43QZnCRdOemrXT3BlbkFJ1wuvzmDNYlt1k7wf5vki',
-            # 'Authorization': f"Bearer {openai.api_key}",
-            'Content-Type': 'application/json'
-        }
-        data = {
-            "model": "gpt-4",
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": user_input}
-            ]
-        }
+        end_time = time.time()
+        app.logger.info("OpenAI response time: %s seconds", end_time - start_time)
 
-        response = requests.post('https://api.openai.com/v1/chat/completions', headers=header, json=data)
-        if response.status_code == 200:
-            result = response.json()
-            print(result['choices'][0]['message']['content'])
-        else:
-            result = "idk"
-            print(result)
-            # print(f"Request failed with status code {response.status_code}: {response.text}")
-        # print(response.json())
-        chat_response = response.choices[0].text.strip()
-        return jsonify({'response': chat_response})
+        reply = response['choices'][0]['message']['content'].strip()
+        app.logger.info("OpenAI response: %s", reply)
+        flask_session['conversation'].append({"role": "assistant", "content": reply})      
+        app.logger.info(f"Updated conversation history: {flask_session['conversation']}")      
+        flask_session.modified = True
+    
+        return jsonify({'response': reply, 'conversation': flask_session['conversation']})
     
 
-    except openai.error.OpenAIError as e:
-        return jsonify({'error': str(e)}), 500
+    except openai.ErrorObject as e:
+        app.logger.error('Authentication error: %s', e)
+        return jsonify({'error': 'Authentication error: ' + str(e)}), 401
+    except openai.OpenAIError as e:
+        app.logger.error('OpenAI API error: %s', e)
+        return jsonify({'error': 'OpenAI API error: ' + str(e)}), 500
     except Exception as e:
-        return jsonify({'error': 'An error occured'}), 500
+        app.logger.error('An error occurred: %s', e)
+        app.logger.error(traceback.format_exc())
+        return jsonify({'error': 'An error occurred: ' + str(e)}), 500
+    
+
+# This test logging was successfully tested at http://127.0.0.1:5000/test_logging 
+@app.route('/test_logging', methods=['GET']) 
+def test_logging():
+    app.logger.info("Test logging endpoint was hit")
+    print("Test print statement", flush=True)
+    return "Logging test complete"
 
 
 if __name__ == '__main__':
@@ -77,8 +119,7 @@ if __name__ == '__main__':
     
     app.run(debug=True, use_reloader=False)
 
-
-
 '''issues:
-- Server isn't waiting for UI to send me anything (line 64,65)
-- Need to send back to front end so it can print it'''
+    - conversation history isn't being saved after each request
+    - conversation history is empty at beginning of each request'''
+

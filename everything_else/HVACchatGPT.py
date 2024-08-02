@@ -25,6 +25,7 @@ import time
 from flask_cors import CORS
 from flask_session import Session
 import traceback
+import subprocess
 
 
 load_dotenv()
@@ -34,7 +35,7 @@ app = Flask(__name__)
 CORS(app)
 
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = './flask_session/'  # Ensure this directory exists
+app.config['SESSION_FILE_DIR'] = '../flask_session/'  # Ensure this directory exists
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 app.config['SESSION_USE_SIGNER'] = True
@@ -108,7 +109,8 @@ if __name__ == '__main__':
     if not openai.api_key:
         raise ValueError('No openAI API key found. Set the OPENAI_API_KEY variable.')
     
-    app.run(debug=True, use_reloader=False) #write a try except condition to catch when the address is already in use
+    if not app.run(debug=True, use_reloader=False):
+        subprocess.run(['kill', '-9', 'python'])#write a try except condition to catch when the address is already in use
 
 '''issues:
     - conversation history isn't being saved after each request

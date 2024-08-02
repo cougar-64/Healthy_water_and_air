@@ -39,11 +39,16 @@
         <button onclick="sendMessage()">Send</button>
         <div id="chat-output"></div>
     </div>
-
+    
     <script>
+        let socket;
         async function sendMessage() {
             const userInput = document.getElementById('user-input').value;
             if (!userInput) return;
+            if ('WebSocket' in window) {
+            console.log('WebSocket is supported by your browser.');
+            console.log(window)
+            }
 
             const chatOutput =  document.getElementById('chat-output');
             chatOutput.innerHTML += `<div class="message user">User: ${userInput}</div>`;
@@ -78,6 +83,8 @@
         }
         
         document.getElementById('user-input').value = ''; // bot response stayed on the screen through this line with a breakpoint
+
+        
     }
     </script>
 </body>
@@ -88,3 +95,4 @@ clearing console and not saving history. Explains all the issues I'm having.
 I think I need to get into the 'script' code because it has a 'refreshCSS()' function that
 refreshes the CSS even if I explicitly tell it not to refresh through terminal commands or otherwise
 (see my html page, sources, line 89 for reference) !>
+

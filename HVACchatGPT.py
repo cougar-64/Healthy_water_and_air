@@ -36,7 +36,7 @@ CORS(app)
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './flask_session/'  # Ensure this directory exists
 app.config['SESSION_PERMANENT'] = True
-app.config['PERMANANT_SESSION_LIFETIME'] = 86400
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'session:'
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -76,9 +76,7 @@ def chat():
         start_time = time.time()
         response = openai.ChatCompletion.create(
             model="gpt-4",
-            messages=[
-                {"role": "user", "content": user_input}
-            ],
+            messages=flask_session['conversation'],
             max_tokens=150
         )
         end_time = time.time()
@@ -105,21 +103,15 @@ def chat():
         return jsonify({'error': 'An error occurred: ' + str(e)}), 500
     
 
-# This test logging was successfully tested at http://127.0.0.1:5000/test_logging 
-@app.route('/test_logging', methods=['GET']) 
-def test_logging():
-    app.logger.info("Test logging endpoint was hit")
-    print("Test print statement", flush=True)
-    return "Logging test complete"
-
 
 if __name__ == '__main__':
     if not openai.api_key:
         raise ValueError('No openAI API key found. Set the OPENAI_API_KEY variable.')
     
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, use_reloader=False) #write a try except condition to catch when the address is already in use
 
 '''issues:
     - conversation history isn't being saved after each request
-    - conversation history is empty at beginning of each request'''
+    - conversation history is empty at beginning of each request
+    - I think it's a front end issue with the `sendMessage` function 8/1/24 1:47pm'''
 

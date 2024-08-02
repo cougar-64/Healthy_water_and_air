@@ -76,9 +76,15 @@
         } catch (error) {
             chatOutput.innerHTML += `<div class="message bot">Error: ${error.message}</div>`;
         }
-
-            document.getElementById('user-input').value = '';
-        }
+        
+        document.getElementById('user-input').value = ''; // bot response stayed on the screen through this line with a breakpoint
+    }
     </script>
 </body>
 </html>
+
+<! issue with front end, basically kicing out every time it's done with the function. 
+clearing console and not saving history. Explains all the issues I'm having. 
+I think I need to get into the 'script' code because it has a 'refreshCSS()' function that
+refreshes the CSS even if I explicitly tell it not to refresh through terminal commands or otherwise
+(see my html page, sources, line 89 for reference) !>

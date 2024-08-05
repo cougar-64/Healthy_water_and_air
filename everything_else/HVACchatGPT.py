@@ -26,6 +26,7 @@ from flask_cors import CORS
 from flask_session import Session
 import traceback
 import subprocess
+import redis
 
 
 load_dotenv()
@@ -34,23 +35,25 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 app = Flask(__name__)
 CORS(app)
 
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = '../flask_session/'  # Ensure this directory exists
+cors = CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://127.0.0.1:5500"}})
+
+# app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = 'redis'
+# app.config['SESSION_FILE_DIR'] = '../flask_session/'  # Ensure this directory exists
+app.config['SESSION_REDIS'] = redis.Redis(host='localhost', port=6379)
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_KEY_PREFIX'] = 'session:'
 app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SESSION_COOKIE_NAME'] = 'test_session_1'  # Set a custom session cookie name
 Session(app)
 
 # logging to console
 logging.basicConfig(level=logging.DEBUG)
 
-@app.before_request
-def before_request():
-    app.logger.info(f"Session ID: {app.config['SESSION_COOKIE_NAME']}")
-    app.logger.info(f"Session Data Before: {dict(flask_session)}")
+# @app.before_request
+# def before_request():
+#     app.logger.info(f"Session ID: {app.config['SESSION_COOKIE_NAME']}")
+#     app.logger.info(f"Session Data Before: {dict(flask_session)}")
 
 
 @app.route('/chat', methods=['POST'])
@@ -90,6 +93,7 @@ def chat():
         flask_session.modified = True
     
         return jsonify({'response': reply, 'conversation': flask_session['conversation']})
+
     
 
     except openai.ErrorObject as e:
@@ -113,7 +117,6 @@ if __name__ == '__main__':
         subprocess.run(['kill', '-9', 'python'])#write a try except condition to catch when the address is already in use
 
 '''issues:
-    - conversation history isn't being saved after each request
-    - conversation history is empty at beginning of each request
-    - I think it's a front end issue with the `sendMessage` function 8/1/24 1:47pm'''
+    - session history and context is not saved
+    '''
 
